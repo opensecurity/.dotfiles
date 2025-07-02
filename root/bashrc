@@ -1,0 +1,22 @@
+#
+# REGISTRY: ~/.bashrc
+#
+# This file loads the dotfiles environment for interactive shells.
+# It delegates all logic to the centralized initializer.
+#
+
+#
+# CONSTANTS
+#
+readonly C_DOTFILES_INIT_PATH="$HOME/.dotfiles/lib/init.sh"
+
+#
+# IMPLEMENTATION
+#
+if [ -f "$C_DOTFILES_INIT_PATH" ]; then
+    source "$C_DOTFILES_INIT_PATH"
+else
+    # Non-fatal error to prevent shell breakage if dotfiles are broken.
+    echo "Expected initializer at '$C_DOTFILES_INIT_PATH' not found." >&2
+fi
+. "$HOME/.cargo/env"
