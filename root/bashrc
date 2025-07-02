@@ -19,4 +19,3 @@ else
     # Non-fatal error to prevent shell breakage if dotfiles are broken.
     echo "Expected initializer at '$C_DOTFILES_INIT_PATH' not found." >&2
 fi
-. "$HOME/.cargo/env"
