@@ -39,29 +39,23 @@ printf "%b%s%b\n" "$C_BOLD_CYAN" "$header_line" "$C_RESET"
 printf "%b|%*s%s%*s|%b\n" "$C_BOLD_CYAN" "$padding" "" "$HOSTNAME" "$((box_width - padding - ${#HOSTNAME} - 2))" "" "$C_RESET"
 printf "%b%s%b\n" "$C_BOLD_CYAN" "$header_line" "$C_RESET"
 
+sysinfo_script="/etc/update-motd.d/50-landscape-sysinfo"
+updates_script="/etc/update-motd.d/90-updates-available"
+
+# Add a newline for spacing before the system info.
+if [ -x "$sysinfo_script" ] || [ -x "$updates_script" ]; then
+    printf "\n"
+fi
+
+# Run the system info script if it exists and is executable.
+if [ -x "$sysinfo_script" ]; then
+    "$sysinfo_script"
+fi
+
 printf "\n"
 print_info "OS:" "$OS_INFO" "$C_CYAN"
 print_info "Kernel:" "$KERNEL" "$C_CYAN"
 print_info "Uptime:" "$UPTIME"
-
-# --- System Updates (Ubuntu/Debian) ---
-# This file is managed by the 'update-notifier-common' package.
-updates_file="/var/lib/update-notifier/updates-available"
-if [ -r "$updates_file" ]; then # If the file is readable
-    # Read the number of total and security updates from the file.
-    # The '|| true' prevents the script from exiting if grep finds no matches.
-    num_packages=$(grep -c "packages can be updated." "$updates_file" || true)
-    num_security=$(grep -c "security updates" "$updates_file" || true)
-
-    if [ "$num_packages" -gt 0 ]; then
-        message="$num_packages packages"
-        if [ "$num_security" -gt 0 ]; then
-            # Color security updates red to highlight importance
-            message+=" (${C_RED}${num_security} security${C_YELLOW})"
-        fi
-        print_info "System Updates:" "$message" "$C_YELLOW"
-    fi
-fi
 
 printf "\n"
 
@@ -70,4 +64,10 @@ if command -v last >/dev/null 2>&1; then
     printf "%bLast Logins:%b\n" "$C_CYAN" "$C_RESET"
     last -n 3 -a | head -n 3
     printf "\n"
+fi
+
+if [ -x "$updates_script" ]; then
+    # Execute the script and pipe its output to grep to filter for the wanted lines.
+    # The '|| true' prevents the script from failing if no updates are found.
+    "$updates_script" | grep --color=never -E "updates can be applied|apt list --upgradable" || true
 fi
