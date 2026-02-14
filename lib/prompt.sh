@@ -141,4 +141,7 @@ _private_build_prompt() {
     export PS1
 }
 
-PROMPT_COMMAND="_private_build_prompt"
+# Chain into PROMPT_COMMAND without overwriting existing entries (e.g., history sync).
+if [[ "${PROMPT_COMMAND:-}" != *"_private_build_prompt"* ]]; then
+    PROMPT_COMMAND="_private_build_prompt${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+fi

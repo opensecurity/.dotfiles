@@ -429,45 +429,121 @@ fi
 
 
 # ============================================================================
-#  Security & Inspection
+#  Security: Network Reconnaissance & Analysis
 # ============================================================================
+alias conns='ss -tunap'
+alias estab='ss -tunp state established'
+alias timewait='ss -tan state time-wait | wc -l'
+alias rawsock='ss -w -a -p'
+alias ifaces='ip -br -c addr'
+alias routes='ip -c route'
+alias neigh='ip -c neigh'
+alias gw="ip route | awk '/default/{print \$3}'"
+alias macaddr="ip link | awk '/ether/{print \$2}'"
+alias promisc='ip link | grep -i promisc'
+alias pubip='curl -s ifconfig.me'
+alias dnsleak='curl -s https://1.1.1.1/cdn-cgi/trace'
 
-# SSL/TLS
+
+# ============================================================================
+#  Security: SSL/TLS & Certificates
+# ============================================================================
 alias sslcheck='openssl s_client -connect'
+alias sslscan='openssl s_client -connect'
 alias sslcert='openssl x509 -noout -text -in'
 alias sslexpiry='openssl s_client -connect 2>/dev/null | openssl x509 -noout -dates'
-alias sslgen='openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes'
+alias certdates='openssl s_client -connect 2>/dev/null | openssl x509 -noout -dates'
+alias certsubj='openssl s_client -connect 2>/dev/null | openssl x509 -noout -subject -issuer'
+alias certsan='openssl s_client -connect 2>/dev/null | openssl x509 -noout -ext subjectAltName'
+alias certfinger='openssl s_client -connect 2>/dev/null | openssl x509 -noout -fingerprint -sha256'
 alias sslverify='openssl verify'
 alias sslhash='openssl x509 -noout -hash -in'
+alias selfsign='openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -keyout key.pem -out cert.pem -subj /CN=localhost'
+alias csrgen='openssl req -new -newkey rsa:4096 -nodes -keyout key.pem -out request.csr'
 
-# Hashing
+
+# ============================================================================
+#  Security: Hashing & File Integrity
+# ============================================================================
 alias sha1='shasum -a 1'
 alias sha256='shasum -a 256'
 alias sha512='shasum -a 512'
+alias hashfile='sha256sum'
+alias hashverify='sha256sum -c'
+alias hashdir='find . -type f -exec sha256sum {} + | sort -k2'
+alias fperms="stat -c '%a %U:%G %n'"
 
-# Password / key generation
+
+# ============================================================================
+#  Security: Password & Key Generation
+# ============================================================================
 alias genpass='openssl rand -base64 32'
 alias genpass16='openssl rand -base64 16'
-alias genuuid='python3 -c "import uuid; print(uuid.uuid4())"'
+alias randpass='openssl rand -base64 48 | tr -d "/+=" | head -c 32; echo'
+alias randhex='openssl rand -hex 32'
 alias genkey='openssl rand -hex 32'
+alias genuuid='python3 -c "import uuid; print(uuid.uuid4())"'
 
-# File permissions audit
-alias worldwritable='find / -xdev -type f -perm -0002 2>/dev/null'
-alias suidfiles='find / -xdev -type f -perm -4000 2>/dev/null'
-alias sgidfiles='find / -xdev -type f -perm -2000 2>/dev/null'
-alias noowner='find / -xdev -nouser -o -nogroup 2>/dev/null'
 
-# Login and auth auditing
-alias lastlogins='last -20'
-alias failedlogins='lastb -20 2>/dev/null || journalctl -u sshd --since "1 week ago" | grep "Failed"'
-alias authlog='sudo tail -f /var/log/auth.log 2>/dev/null || sudo tail -f /var/log/secure'
-alias sshlogins='grep "Accepted" /var/log/auth.log 2>/dev/null || journalctl -u sshd | grep "Accepted"'
-
-# Encoding / decoding
+# ============================================================================
+#  Security: Encoding / Decoding
+# ============================================================================
 alias b64e='base64'
 alias b64d='base64 -d'
 alias urlencode='python3 -c "import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))"'
 alias urldecode='python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))"'
+
+
+# ============================================================================
+#  Security: File Permission Auditing
+# ============================================================================
+alias suid='find / -xdev -type f -perm -4000 -exec ls -la {} \; 2>/dev/null'
+alias sgid='find / -xdev -type f -perm -2000 -exec ls -la {} \; 2>/dev/null'
+alias worldw='find / -xdev -type f -perm -0002 -exec ls -la {} \; 2>/dev/null'
+alias worldwd='find / -xdev -type d -perm -0002 -exec ls -lad {} \; 2>/dev/null'
+alias noowner='find / -xdev \( -nouser -o -nogroup \) -exec ls -la {} \; 2>/dev/null'
+alias recentmod='find / -xdev -type f -mmin -60 -exec ls -la {} \; 2>/dev/null'
+alias largefiles='find / -xdev -type f -size +100M -exec ls -lh {} \; 2>/dev/null | sort -k5 -rh'
+alias exeintmp='find /tmp /var/tmp /dev/shm -type f -executable 2>/dev/null'
+alias coredumps='find / -xdev -name "core" -o -name "core.*" 2>/dev/null'
+alias dotfilefind='find / -xdev -name ".*" -type f 2>/dev/null | grep -v -E "/(\.git|\.cache|\.local)/"'
+if command -v lsattr >/dev/null 2>&1; then
+    alias immutable='lsattr -R / 2>/dev/null | grep "\-i\-"'
+fi
+
+
+# ============================================================================
+#  Security: Process & Runtime Forensics
+# ============================================================================
+alias pstree='ps -ejH'
+alias psnet='lsof -i -n -P'
+alias psdeleted='lsof +L1'
+alias psnoparent="ps -eo pid,ppid,comm | awk '\$2==1{print}'"
+alias psenv='cat /proc/$$/environ 2>/dev/null | tr "\0" "\n"'
+alias fdcount="lsof -n 2>/dev/null | awk '{print \$1}' | sort | uniq -c | sort -rn | head -20"
+alias stracepid='sudo strace -fp'
+alias bindeps='ldd'
+alias binstrings='strings -a'
+alias deleted='sudo find /proc/*/exe -type l 2>/dev/null | xargs ls -la 2>/dev/null | grep deleted'
+
+
+# ============================================================================
+#  Security: User & Authentication Auditing
+# ============================================================================
+alias whois_on='w -h'
+alias lastlogins='last -20'
+alias loginssh='last -i -20'
+alias lastlog_active='lastlog | grep -v "Never"'
+alias failedlogins='sudo lastb -20 2>/dev/null || journalctl -u sshd --since "1 week ago" 2>/dev/null | grep "Failed"'
+alias authlog='sudo tail -f /var/log/auth.log 2>/dev/null || sudo tail -f /var/log/secure'
+alias sshlogins='grep "Accepted" /var/log/auth.log 2>/dev/null || journalctl -u sshd 2>/dev/null | grep "Accepted"'
+alias nologin='grep -v "/nologin\|/false" /etc/passwd'
+alias uid0="awk -F: '\$3==0{print}' /etc/passwd"
+alias emptypass="sudo awk -F: '(\$2==\"\"){print \$1}' /etc/shadow 2>/dev/null"
+alias passexpiry='sudo chage -l'
+alias sudoers='grep -v "^#\|^$" /etc/sudoers /etc/sudoers.d/* 2>/dev/null'
+alias sshkeysall='find /home -name authorized_keys -exec ls -la {} \; 2>/dev/null'
+alias loginshells='cat /etc/shells'
 
 
 # ============================================================================
@@ -641,14 +717,49 @@ if [ "${DOTFILES_OS:-}" = "Linux" ]; then
         alias wifioff='nmcli radio wifi off'
     fi
 
-    # Firewall (ufw)
+    # Firewall: iptables inspection (base package on all distros)
+    if command -v iptables >/dev/null 2>&1; then
+        alias iptlist='sudo iptables -L -n -v --line-numbers'
+        alias iptnat='sudo iptables -t nat -L -n -v'
+        alias iptmangle='sudo iptables -t mangle -L -n -v'
+        alias iptcount='sudo iptables -L -n -v -x'
+        alias iptdrop='sudo iptables -L -n -v | grep -i drop'
+        alias iptlog='sudo iptables -L -n -v | grep -i log'
+    fi
+
+    # Firewall: ufw management
     if command -v ufw >/dev/null 2>&1; then
-        alias fwlist='sudo iptables -L -n -v --line-numbers'
-        alias fws='sudo ufw status'
+        alias fws='sudo ufw status verbose'
         alias fwa='sudo ufw allow'
         alias fwi='sudo ufw deny'
         alias fwc='sudo ufw enable'
+        alias fwoff='sudo ufw disable'
+        alias fwreset='sudo ufw reset'
     fi
+
+    # Network security: /proc/sys tunables
+    alias ipfwd='cat /proc/sys/net/ipv4/ip_forward'
+    alias synprot='cat /proc/sys/net/ipv4/tcp_syncookies'
+
+    # Log analysis: journalctl / dmesg
+    alias authwatch='sudo tail -f /var/log/auth.log 2>/dev/null || sudo journalctl -fu sshd'
+    alias sshfail='sudo journalctl -u sshd --since "24h ago" 2>/dev/null | grep "Failed"'
+    alias sshaccept='sudo journalctl -u sshd --since "24h ago" 2>/dev/null | grep "Accepted"'
+    alias kernerr='dmesg -T --level=err,crit,alert,emerg 2>/dev/null'
+    alias kernwarn='dmesg -T --level=warn 2>/dev/null'
+    alias oomkills='dmesg -T 2>/dev/null | grep -i "oom-killer\|out of memory"'
+    alias segfaults='dmesg -T 2>/dev/null | grep -i segfault'
+    alias booterr='journalctl -b -p err 2>/dev/null'
+    alias cronlog='sudo journalctl -u cron --since "24h ago" 2>/dev/null'
+    alias sulog='sudo journalctl 2>/dev/null | grep -E "su:|sudo:"'
+
+    # Kernel & system hardening checks
+    alias aslr='cat /proc/sys/kernel/randomize_va_space'
+    alias ptrace='cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null'
+    alias kptr='cat /proc/sys/kernel/kptr_restrict'
+    alias dmesgperm='cat /proc/sys/kernel/dmesg_restrict'
+    alias coredumpcfg='cat /proc/sys/kernel/core_pattern'
+    alias modules='lsmod | sort'
 
     # Clipboard (X11)
     if command -v xclip >/dev/null 2>&1; then

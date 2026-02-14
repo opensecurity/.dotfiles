@@ -1,0 +1,93 @@
+#
+# REGISTRY: ~/.inputrc
+#
+# Readline configuration for bash and all readline-based programs.
+# Provides zsh-style history search, smart completion, and navigation.
+#
+
+# ============================================================================
+#  History Search (zsh-like behavior)
+# ============================================================================
+
+# Up/Down arrows search history matching the current prefix.
+# Type "ssh" then press Up to cycle through all "ssh ..." commands.
+"\e[A": history-search-backward
+"\e[B": history-search-forward
+
+# Same for terminals that send different escape codes.
+"\eOA": history-search-backward
+"\eOB": history-search-forward
+
+# Ctrl+P / Ctrl+N also do prefix search (like zsh).
+"\C-p": history-search-backward
+"\C-n": history-search-forward
+
+
+# ============================================================================
+#  Completion
+# ============================================================================
+
+# Case-insensitive tab completion (a-z matches A-Z and vice versa).
+set completion-ignore-case on
+
+# Treat hyphens and underscores as equivalent during completion.
+set completion-map-case on
+
+# Show all completions on first Tab if ambiguous (no double-tab needed).
+set show-all-if-ambiguous on
+
+# Show all completions if there is no partial completion to insert.
+set show-all-if-unmodified on
+
+# Color the common prefix in completion lists.
+set colored-completion-prefix on
+
+# Show file type indicators in completion lists (like ls -F).
+set visible-stats on
+
+# Append a slash to completed directory names.
+set mark-directories on
+set mark-symlinked-directories on
+
+# Don't duplicate text when completing in the middle of a word.
+set skip-completed-text on
+
+# Display completions using the terminal width efficiently.
+set completion-display-width -1
+
+# Limit completion list queries: show up to 200 without asking.
+set completion-query-items 200
+
+
+# ============================================================================
+#  Editing & Navigation
+# ============================================================================
+
+# Use 8-bit input/output (handle UTF-8 properly).
+set input-meta on
+set output-meta on
+set convert-meta off
+
+# Disable the bell entirely.
+set bell-style none
+
+# Allow UTF-8 input and output.
+set meta-flag on
+
+# Be more intelligent when autocompleting by also looking at the text after
+# the cursor. For example, when the current line is "cd /usr/loca"
+# and the cursor is on "a", pressing Tab will not autocomplete to
+# "cd /usr/markup/markup_local_al" but to "cd /usr/local/".
+set skip-completed-text on
+
+# Alt+Left / Alt+Right to move by word (like most modern terminals).
+"\e[1;3D": backward-word
+"\e[1;3C": forward-word
+
+# Ctrl+Left / Ctrl+Right to move by word (alternate escape codes).
+"\e[1;5D": backward-word
+"\e[1;5C": forward-word
+
+# Ctrl+Backspace / Ctrl+Delete to kill word.
+"\e[3;5~": kill-word
+"\C-h": backward-kill-word

@@ -37,8 +37,72 @@ export LSCOLORS="GxFxCxDxBxegedabagaced"
 export HISTCONTROL="ignoredups:erasedups"
 
 # Increase history size.
-export HISTSIZE=10000
-export HISTFILESIZE=20000
+export HISTSIZE=50000
+export HISTFILESIZE=100000
 
 # Do not put duplicate lines or lines starting with space in the history.
-export HISTIGNORE="&:[ ]*"
+export HISTIGNORE="&:[ ]*:exit:bg:fg:history:clear:cls:c"
+
+# Add timestamps to history entries.
+export HISTTIMEFORMAT="%F %T  "
+
+
+# ============================================================================
+#  Shell Options (shopt)
+# ============================================================================
+
+# Append to history file instead of overwriting (critical for multi-session).
+shopt -s histappend
+
+# Save multi-line commands as a single history entry.
+shopt -s cmdhist
+
+# Re-edit a failed history substitution.
+shopt -s histreedit
+
+# Verify history substitution before executing.
+shopt -s histverify
+
+# Auto-correct minor cd typos (e.g., "cd /ect" -> "cd /etc").
+shopt -s cdspell
+
+# Correct minor directory name typos during word completion.
+shopt -s dirspell 2>/dev/null
+
+# Allow "cd dirname" without typing "cd" (just type the directory name).
+shopt -s autocd 2>/dev/null
+
+# Enable recursive globbing with ** (e.g., "ls **/*.py").
+shopt -s globstar 2>/dev/null
+
+# Update LINES and COLUMNS after each command (resize handling).
+shopt -s checkwinsize
+
+# Allow dotfiles to be matched by glob patterns.
+shopt -s dotglob
+
+# Use extended pattern matching (?(pat), *(pat), +(pat), @(pat), !(pat)).
+shopt -s extglob
+
+# Case-insensitive glob matching.
+shopt -s nocaseglob
+
+# If a glob pattern matches nothing, expand to empty instead of the literal.
+shopt -s nullglob 2>/dev/null
+
+
+# ============================================================================
+#  History Sync Across Sessions
+# ============================================================================
+# Flush history after each command so other terminals can see it.
+# This chains with PROMPT_COMMAND if it's already set (e.g., by prompt.sh).
+_dotfiles_history_sync() {
+    history -a   # Append new entries to the history file.
+    history -c   # Clear the in-memory history.
+    history -r   # Reload history from the file.
+}
+
+# Chain into PROMPT_COMMAND without overwriting existing entries.
+if [[ "${PROMPT_COMMAND:-}" != *"_dotfiles_history_sync"* ]]; then
+    PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_dotfiles_history_sync"
+fi

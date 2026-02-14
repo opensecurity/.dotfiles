@@ -35,6 +35,13 @@ _safe_source "${C_DOTFILES_LIB_DIR}/aliases.sh" "Aliases"
 _safe_source "${C_DOTFILES_LIB_DIR}/functions.sh" "Functions"
 _safe_source "${C_DOTFILES_LIB_DIR}/prompt.sh" "Prompt"
 
+# Source bash completion if available (provides completions for git, docker, etc.).
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+    source /usr/share/bash-completion/bash_completion
+elif [ -f /etc/bash_completion ]; then
+    source /etc/bash_completion
+fi
+
 #
 # PRIVATE_HELPERS
 #

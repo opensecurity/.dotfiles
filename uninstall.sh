@@ -14,7 +14,7 @@ set -o pipefail
 #
 readonly C_DOTFILES_DIR="$HOME/.dotfiles"
 readonly C_BACKUP_DIR="$HOME/.dotfiles_backup"
-readonly C_DOTFILES_TO_UNLINK=( "bash_profile" "bashrc" )
+readonly C_DOTFILES_TO_UNLINK=( "bash_profile" "bashrc" "inputrc" )
 
 #
 # PRIVATE_HELPERS
