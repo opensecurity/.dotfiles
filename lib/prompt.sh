@@ -63,7 +63,7 @@ _private_prompt_git_info() {
 
     # --- Stash Status ---
     local stash_status=''
-    if [ -n "$(git stash list -q | head -n 1)" ]; then
+    if [ -n "$(git stash list | head -n 1)" ]; then
         stash_status="${c_magenta}\$${c_reset}"
     fi
 

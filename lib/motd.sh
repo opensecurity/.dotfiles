@@ -4,7 +4,6 @@
 #
 # A dynamic MOTD script that provides a personal system overview on login.
 #
-set -o errexit
 set -o nounset
 set -o pipefail
 
@@ -22,10 +21,10 @@ print_info() {
 }
 
 # --- Data Gathering ---
-readonly HOSTNAME=$(hostname)
-readonly OS_INFO=$(grep PRETTY_NAME /etc/os-release | cut -d '"' -f 2)
-readonly KERNEL=$(uname -r)
-readonly UPTIME=$(uptime -p | sed 's/up //')
+readonly HOSTNAME=$(hostname 2>/dev/null || echo "unknown")
+readonly OS_INFO=$(grep PRETTY_NAME /etc/os-release 2>/dev/null | cut -d '"' -f 2 || echo "Unknown OS")
+readonly KERNEL=$(uname -r 2>/dev/null || echo "unknown")
+readonly UPTIME=$(uptime -p 2>/dev/null | sed 's/up //' || echo "unknown")
 
 
 # --- ASCII Art Header ---

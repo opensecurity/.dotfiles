@@ -8,7 +8,7 @@
 #
 # CONSTANTS
 #
-readonly C_DOTFILES_INIT_PATH="$HOME/.dotfiles/lib/init.sh"
+C_DOTFILES_INIT_PATH="$HOME/.dotfiles/lib/init.sh"
 
 #
 # IMPLEMENTATION

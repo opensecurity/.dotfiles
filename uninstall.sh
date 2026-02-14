@@ -52,7 +52,7 @@ main() {
         # Restore the latest backup if one exists.
         if [ -d "$C_BACKUP_DIR" ]; then
             local latest_backup
-            latest_backup=$(find "$C_BACKUP_DIR" -name ".$dotfile.backup.*" -print0 | xargs -0 ls -t | head -n 1)
+            latest_backup=$(find "$C_BACKUP_DIR" -name ".$dotfile.backup.*" -print0 | xargs -0 --no-run-if-empty ls -t 2>/dev/null | head -n 1)
 
             if [ -f "$latest_backup" ]; then
                 _log_info "Restoring backup for '$dotfile' from '$latest_backup'..."

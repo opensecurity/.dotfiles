@@ -7,8 +7,9 @@
 #
 # CONSTANTS
 #
-readonly C_DEFAULT_EDITOR="nano"
-readonly C_DEFAULT_LOCALE="en_US.UTF-8"
+C_DEFAULT_EDITOR="nano"
+C_DEFAULT_LOCALE="en_US.UTF-8"
+DOTFILES_OS="$(uname -s)"
 
 #
 # IMPLEMENTATION
@@ -19,9 +20,8 @@ export VISUAL="${VISUAL:-$C_DEFAULT_EDITOR}"
 # Set locale only if the `locale` command is available AND the desired locale exists.
 # This prevents warnings on systems where 'en_US.UTF-8' is not generated.
 if command -v locale >/dev/null 2>&1; then
-    # The grep is case-insensitive ('-i') and matches the whole line ('-x')
-    # to handle variations like 'utf8' vs 'UTF-8' and prevent partial matches.
-    if locale -a | grep -q -i -x "$C_DEFAULT_LOCALE"; then
+    # Match both 'en_US.UTF-8' and 'en_US.utf8' formats reported by locale -a.
+    if locale -a 2>/dev/null | grep -q -i 'en_US\.utf-\?8'; then
         export LANG="$C_DEFAULT_LOCALE"
         export LC_ALL="$C_DEFAULT_LOCALE"
     fi
