@@ -94,12 +94,13 @@ shopt -s nullglob 2>/dev/null
 # ============================================================================
 #  History Sync Across Sessions
 # ============================================================================
-# Flush history after each command so other terminals can see it.
-# This chains with PROMPT_COMMAND if it's already set (e.g., by prompt.sh).
+# Append new entries to the history file after each command.
+# We intentionally do NOT use "history -c; history -r" here because that
+# resets readline's internal history pointer on every prompt, which breaks
+# Up-arrow prefix search for commands typed in the current session.
+# New terminals inherit the full history on startup automatically.
 _dotfiles_history_sync() {
-    history -a   # Append new entries to the history file.
-    history -c   # Clear the in-memory history.
-    history -r   # Reload history from the file.
+    history -a
 }
 
 # Chain into PROMPT_COMMAND without overwriting existing entries.

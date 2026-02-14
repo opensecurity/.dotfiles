@@ -34,6 +34,7 @@ _safe_source "${C_DOTFILES_LIB_DIR}/exports.sh" "Exports"
 _safe_source "${C_DOTFILES_LIB_DIR}/aliases.sh" "Aliases"
 _safe_source "${C_DOTFILES_LIB_DIR}/functions.sh" "Functions"
 _safe_source "${C_DOTFILES_LIB_DIR}/prompt.sh" "Prompt"
+_safe_source "${C_DOTFILES_LIB_DIR}/cmdcolor.sh" "CmdColor"
 
 # Source bash completion if available (provides completions for git, docker, etc.).
 if [ -f /usr/share/bash-completion/bash_completion ]; then

@@ -103,6 +103,11 @@ _private_build_prompt() {
     local last_exit_code="$?"
     local prompt_symbol
 
+    # Show colored status of previous command (if cmdcolor.sh is loaded).
+    if declare -F _dotfiles_cmd_status >/dev/null 2>&1; then
+        _dotfiles_cmd_status "$last_exit_code"
+    fi
+
     # ANSI color escape sequences.
     local c_reset='\[\e[0m\]'
     local c_bold='\[\e[1m\]'
