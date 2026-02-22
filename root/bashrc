@@ -4,6 +4,8 @@
 # This file loads the dotfiles environment for interactive shells.
 # It delegates all logic to the centralized initializer.
 #
+# If not running interactively, don't do anything!
+[ -z "$PS1" ] && return
 
 #
 # CONSTANTS
