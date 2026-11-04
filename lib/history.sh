@@ -80,88 +80,22 @@ hstats() {
 
 
 # ============================================================================
-#  Automatic Word & Substring History Search on Up / Down Arrows
+#  Native Readline Substring History Search (Zero-Blink, In-Memory)
 # ============================================================================
-# When you type any word (or multiple words) and press Up arrow, this engine
-# automatically cycles through all commands matching those words whether they
-# appear at the start, middle, or end of the command line.
-# Pressing Down arrow steps back forward, and pressing Down past the newest
-# match restores the exact text you originally typed.
-
-_dotfiles_hist_query=""
-_dotfiles_hist_orig=""
-_dotfiles_hist_matches=()
-_dotfiles_hist_idx=-1
-
-_dotfiles_history_search_up() {
-    local cur_line="$READLINE_LINE"
-
-    # Continuation of current search
-    if [ "$_dotfiles_hist_idx" -ge 0 ] && [ "$cur_line" = "${_dotfiles_hist_matches[$_dotfiles_hist_idx]:-}" ]; then
-        local next_idx=$((_dotfiles_hist_idx + 1))
-        if [ "$next_idx" -lt "${#_dotfiles_hist_matches[@]}" ]; then
-            _dotfiles_hist_idx="$next_idx"
-            READLINE_LINE="${_dotfiles_hist_matches[$_dotfiles_hist_idx]}"
-            READLINE_POINT=${#READLINE_LINE}
-        fi
-        return
-    fi
-
-    # Initialize a new search based on current command-line buffer
-    _dotfiles_hist_orig="$cur_line"
-    _dotfiles_hist_query="$cur_line"
-    _dotfiles_hist_matches=()
-    _dotfiles_hist_idx=-1
-
-    local -a terms
-    read -r -a terms <<< "$_dotfiles_hist_query"
-
-    local cmd='fc -l -n 1 2>/dev/null | awk '\''{a[NR]=$0} END {for (i=NR; i>=1; i--) { sub(/^[ \t]+/, "", a[i]); if (length(a[i]) > 0 && !seen[a[i]]++) print a[i] }}'\'
-    for t in "${terms[@]}"; do
-        cmd+=" | grep -i -F -- $(printf '%q' "$t")"
-    done
-
-    while IFS= read -r match_line; do
-        [ -n "$match_line" ] && _dotfiles_hist_matches+=("$match_line")
-    done < <(eval "$cmd")
-
-    if [ "${#_dotfiles_hist_matches[@]}" -gt 0 ]; then
-        _dotfiles_hist_idx=0
-        READLINE_LINE="${_dotfiles_hist_matches[0]}"
-        READLINE_POINT=${#READLINE_LINE}
-    fi
-}
-
-_dotfiles_history_search_down() {
-    local cur_line="$READLINE_LINE"
-
-    if [ "$_dotfiles_hist_idx" -lt 0 ]; then
-        return
-    fi
-
-    # Reached the starting point: restore originally typed query
-    if [ "$_dotfiles_hist_idx" -eq 0 ]; then
-        _dotfiles_hist_idx=-1
-        READLINE_LINE="$_dotfiles_hist_orig"
-        READLINE_POINT=${#READLINE_LINE}
-        return
-    fi
-
-    _dotfiles_hist_idx=$((_dotfiles_hist_idx - 1))
-    READLINE_LINE="${_dotfiles_hist_matches[$_dotfiles_hist_idx]}"
-    READLINE_POINT=${#READLINE_LINE}
-}
-
-# Bind keys for interactive shells
+# Binds arrow keys directly to GNU Readline's native C substring search engine.
+# Runs directly inside Readline in 0ms without clearing the line or redrawing
+# the prompt, completely eliminating any visual flicker or micro-blink.
 if [[ $- == *i* ]]; then
-    bind -x '"\e[A": _dotfiles_history_search_up'
-    bind -x '"\eOA": _dotfiles_history_search_up'
-    bind -x '"\e[B": _dotfiles_history_search_down'
-    bind -x '"\eOB": _dotfiles_history_search_down'
-    bind -x '"\C-p": _dotfiles_history_search_up'
-    bind -x '"\C-n": _dotfiles_history_search_down'
-    bind -x '"\e[5~": _dotfiles_history_search_up'
-    bind -x '"\e[6~": _dotfiles_history_search_down'
+    bind '"\e[A": history-substring-search-backward' 2>/dev/null
+    bind '"\eOA": history-substring-search-backward' 2>/dev/null
+    bind '"\e[B": history-substring-search-forward' 2>/dev/null
+    bind '"\eOB": history-substring-search-forward' 2>/dev/null
+    bind '"\C-p": history-substring-search-backward' 2>/dev/null
+    bind '"\C-n": history-substring-search-forward' 2>/dev/null
+    bind '"\e[5~": history-substring-search-backward' 2>/dev/null
+    bind '"\e[6~": history-substring-search-forward' 2>/dev/null
+    bind '"\e[1;5A": history-substring-search-backward' 2>/dev/null
+    bind '"\e[1;5B": history-substring-search-forward' 2>/dev/null
 fi
 
 
