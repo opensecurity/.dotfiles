@@ -67,6 +67,9 @@ _dotfiles_capture_cmd() {
 _dotfiles_cmd_status() {
     local exit_code="$1"
 
+    # Allow disabling the status indicator if user prefers a quieter terminal
+    [ "${DOTFILES_CMD_STATUS:-true}" = "false" ] && return
+
     # Don't print anything if there's no captured command.
     [ -z "$_DOTFILES_LAST_CMD" ] && return
 

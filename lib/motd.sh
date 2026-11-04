@@ -25,6 +25,9 @@ readonly HOSTNAME=$(hostname 2>/dev/null || echo "unknown")
 readonly OS_INFO=$(grep PRETTY_NAME /etc/os-release 2>/dev/null | cut -d '"' -f 2 || echo "Unknown OS")
 readonly KERNEL=$(uname -r 2>/dev/null || echo "unknown")
 readonly UPTIME=$(uptime -p 2>/dev/null | sed 's/up //' || echo "unknown")
+readonly MEM_INFO=$(free -h 2>/dev/null | awk '/^Mem:/{print $3" / "$2}' || free -m 2>/dev/null | awk '/^Mem:/{print $3"MB / "$2"MB"}')
+readonly DISK_INFO=$(df -h / 2>/dev/null | awk 'NR==2{print $5" ("$3" / "$2")"}')
+readonly LOAD_INFO=$(cat /proc/loadavg 2>/dev/null | awk '{print $1", "$2", "$3}')
 
 
 # --- ASCII Art Header ---
@@ -55,14 +58,20 @@ printf "\n"
 print_info "OS:" "$OS_INFO" "$C_CYAN"
 print_info "Kernel:" "$KERNEL" "$C_CYAN"
 print_info "Uptime:" "$UPTIME"
+[ -n "$LOAD_INFO" ] && print_info "Load Avg:" "$LOAD_INFO"
+[ -n "$MEM_INFO" ] && print_info "Memory:" "$MEM_INFO"
+[ -n "$DISK_INFO" ] && print_info "Disk (/):" "$DISK_INFO"
 
 printf "\n"
 
 # --- Last Login Info ---
 if command -v last >/dev/null 2>&1; then
-    printf "%bLast Logins:%b\n" "$C_CYAN" "$C_RESET"
-    last -n 3 -a | head -n 3
-    printf "\n"
+    last_logins=$(last -n 3 -a 2>/dev/null || last 2>/dev/null | head -n 3)
+    if [ -n "$last_logins" ]; then
+        printf "%bLast Logins:%b\n" "$C_CYAN" "$C_RESET"
+        echo "$last_logins"
+        printf "\n"
+    fi
 fi
 
 if [ -x "$updates_script" ]; then

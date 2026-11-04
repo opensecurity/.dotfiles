@@ -10,9 +10,8 @@
 #
 # Truncates the username to the first and last letter, separated by asterisks.
 _private_truncate_user() {
-    local user_string="$USER"
-    # If username is 2 chars or less, show it fully.
-    if [ "${#user_string}" -le 2 ]; then
+    local user_string="${USER:-$(id -un)}"
+    if [ "${DOTFILES_PROMPT_PRIVACY:-true}" = "false" ] || [ "${#user_string}" -le 2 ]; then
         echo "$user_string"
         return
     fi
@@ -24,9 +23,8 @@ _private_truncate_user() {
 # Truncates the hostname to the first 3 and last letter, separated by asterisks.
 _private_truncate_host() {
     local host_string
-    host_string=$(hostname -s) # Use command for reliability.
-    # If hostname is 4 chars or less, show it fully.
-    if [ "${#host_string}" -le 4 ]; then
+    host_string=$(hostname -s 2>/dev/null || echo "host")
+    if [ "${DOTFILES_PROMPT_PRIVACY:-true}" = "false" ] || [ "${#host_string}" -le 4 ]; then
         echo "$host_string"
         return
     fi
@@ -54,6 +52,18 @@ _private_prompt_git_info() {
 
     local branch_name
     branch_name=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo '(unknown)')
+
+    # --- Git Action Status (Merge / Rebase / Cherry-pick) ---
+    local git_dir
+    git_dir=$(git rev-parse --git-dir 2>/dev/null)
+    local git_action=''
+    if [ -f "$git_dir/MERGE_HEAD" ]; then
+        git_action="${c_bold_red}|MERGE${c_reset}"
+    elif [ -d "$git_dir/rebase-merge" ] || [ -d "$git_dir/rebase-apply" ]; then
+        git_action="${c_bold_red}|REBASE${c_reset}"
+    elif [ -f "$git_dir/CHERRY_PICK_HEAD" ]; then
+        git_action="${c_bold_red}|CHERRY-PICK${c_reset}"
+    fi
 
     # --- File Status (Individually Colored) ---
     local file_status=''
@@ -88,9 +98,9 @@ _private_prompt_git_info() {
     local final_status="${remote_status}${stash_status}${file_status}"
 
     if [ -n "$final_status" ]; then
-        echo " on ${c_cyan}${branch_name}${c_reset} ${final_status}"
+        echo " on ${c_cyan}${branch_name}${c_reset}${git_action} ${final_status}"
     else
-        echo " on ${c_cyan}${branch_name}${c_reset}"
+        echo " on ${c_cyan}${branch_name}${c_reset}${git_action}"
     fi
 }
 
@@ -131,8 +141,8 @@ _private_build_prompt() {
     local truncated_host=$(_private_truncate_host)
     local git_info=$(_private_prompt_git_info)
 
-    # Set terminal title to the current folder name.
-    PS1="\[\033]0;\W\007\]"
+    # Set terminal window title to user@host: folder.
+    PS1="\[\033]0;\u@\h: \W\007\]"
 
     # Build the prompt line
     PS1+="${user_color}${truncated_user}${c_reset}@${host_color}${truncated_host}${c_reset}"

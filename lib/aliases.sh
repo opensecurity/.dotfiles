@@ -31,6 +31,7 @@ alias mv='mv -i'
 alias mkdir='mkdir -pv'
 alias chom='chmod 755'
 alias chox='chmod +x'
+alias chx='chmod +x'
 
 # Rsync copy with progress
 alias cpv='rsync -ah --progress'
@@ -56,17 +57,28 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
+alias cd..='cd ..'
+alias -- -='cd -'
+alias mkcd='mkd'
+alias take='mkd'
+alias cdl='cd_and_list'
+alias cl='cd_and_list'
 
 
 # ============================================================================
-#  General Convenience
+#  General Convenience & History
 # ============================================================================
+# Allow aliases to be expanded when prefixed with sudo (e.g. sudo ll /root)
+alias sudo='sudo '
+
 alias h='history'
-alias hg='history | grep'
+alias hg='history | grep -i'
+alias hsg='hs'
 alias c='clear'
 alias cls='clear'
 alias j='jobs -l'
 alias reload='source ~/.bashrc && echo "Bash reloaded"'
+alias envg='env | sort | grep -i'
 alias path='echo $PATH | tr ":" "\n"'
 alias now='date +"%Y-%m-%d %H:%M:%S"'
 alias timestamp='date +%s'
@@ -153,6 +165,9 @@ alias openfiles='lsof -c'
 #  Git
 # ============================================================================
 if command -v git >/dev/null 2>&1; then
+    alias g='git'
+    alias grt='cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"'
+    alias gitroot='cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"'
     # Status & info
     alias gs='git status -sb'
     alias gd='git diff'

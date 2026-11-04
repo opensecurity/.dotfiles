@@ -2,25 +2,33 @@
 # REGISTRY: ~/.inputrc
 #
 # Readline configuration for bash and all readline-based programs.
-# Provides zsh-style history search, smart completion, and navigation.
+# Provides substring history search, smart completion, and navigation.
 #
 
 # ============================================================================
-#  History Search (zsh-like behavior)
+#  History Substring Search (Full Substring & Fuzzy Matching)
 # ============================================================================
 
-# Up/Down arrows search history matching the current prefix.
-# Type "ssh" then press Up to cycle through all "ssh ..." commands.
-"\e[A": history-search-backward
-"\e[B": history-search-forward
+# Up/Down arrows search history matching any substring typed so far.
+# Type "build", "prune", or "8080" then press Up to cycle through all matching commands anywhere in the line.
+"\e[A": history-substring-search-backward
+"\e[B": history-substring-search-forward
 
-# Same for terminals that send different escape codes.
-"\eOA": history-search-backward
-"\eOB": history-search-forward
+# Application mode / SS3 escape codes (used by many terminal emulators).
+"\eOA": history-substring-search-backward
+"\eOB": history-substring-search-forward
 
-# Ctrl+P / Ctrl+N also do prefix search (like zsh).
-"\C-p": history-search-backward
-"\C-n": history-search-forward
+# Ctrl+P / Ctrl+N also perform substring search.
+"\C-p": history-substring-search-backward
+"\C-n": history-substring-search-forward
+
+# Page Up / Page Down for rapid history substring search.
+"\e[5~": history-substring-search-backward
+"\e[6~": history-substring-search-forward
+
+# Ctrl+Up / Ctrl+Down (xterm / tmux).
+"\e[1;5A": history-substring-search-backward
+"\e[1;5B": history-substring-search-forward
 
 
 # ============================================================================
@@ -41,6 +49,12 @@ set show-all-if-unmodified on
 
 # Color the common prefix in completion lists.
 set colored-completion-prefix on
+
+# Color file types according to LS_COLORS in completion lists.
+set colored-stats on
+
+# Display common prefix when using menu completion.
+set menu-complete-display-prefix on
 
 # Show file type indicators in completion lists (like ls -F).
 set visible-stats on
@@ -71,6 +85,9 @@ set convert-meta off
 # Disable the bell entirely.
 set bell-style none
 
+# Do not print ^C on the terminal when cancelling a command.
+set echo-control-characters off
+
 # Allow UTF-8 input and output.
 set meta-flag on
 
@@ -88,6 +105,26 @@ set skip-completed-text on
 "\e[1;5D": backward-word
 "\e[1;5C": forward-word
 
+# Shift+Tab to cycle backward through completions.
+"\e[Z": menu-complete-backward
+
+# Path-aware word deletion (Ctrl+W deletes up to nearest '/' instead of whole line).
+"\C-w": unix-filename-rubout
+
+# Bracketed paste mode (protects against accidental execution of pasted multi-line commands).
+set enable-bracketed-paste on
+
 # Ctrl+Backspace / Ctrl+Delete to kill word.
 "\e[3;5~": kill-word
 "\C-h": backward-kill-word
+
+# Delete key
+"\e[3~": delete-char
+
+# Home / End keys (standard ANSI, xterm, rxvt)
+"\e[1~": beginning-of-line
+"\e[4~": end-of-line
+"\e[H": beginning-of-line
+"\e[F": end-of-line
+"\eOH": beginning-of-line
+"\eOF": end-of-line

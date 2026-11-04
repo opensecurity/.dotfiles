@@ -32,6 +32,32 @@ function mkd() {
     mkdir -p "$1" && cd "$1" || return
 }
 
+# Change directory and list its contents immediately.
+function cd_and_list() {
+    cd "$@" && ls -lah
+}
+
+# Repeats a command N times. Example: repeat 5 curl -I http://example.com
+function repeat() {
+    local count="${1:?Usage: repeat <count> <command...>}"
+    shift
+    local i
+    for ((i=1; i<=count; i++)); do
+        "$@"
+    done
+}
+
+# Simple terminal countdown timer. Example: countdown 30
+function countdown() {
+    local secs="${1:-10}"
+    while [ "$secs" -gt 0 ]; do
+        printf "\rTimer: %02d:%02d " $((secs/60)) $((secs%60))
+        sleep 1
+        secs=$((secs - 1))
+    done
+    printf "\rTime's up!      \n"
+}
+
 # Extracts common archive formats automatically.
 function extract() {
     if [ -z "$1" ] || [ ! -f "$1" ]; then
@@ -41,6 +67,8 @@ function extract() {
         *.tar.bz2) tar xjf "$1" ;;
         *.tar.gz)  tar xzf "$1" ;;
         *.tar.xz)  tar xJf "$1" ;;
+        *.tar.zst|*.tzst) tar --zstd -xf "$1" 2>/dev/null || tar -xf "$1" ;;
+        *.zst)     unzstd "$1" ;;
         *.bz2)     bunzip2 "$1" ;;
         *.gz)      gunzip "$1" ;;
         *.tar)     tar xf "$1" ;;
@@ -52,6 +80,89 @@ function extract() {
         *.rar)     unrar x "$1" ;;
         *)         echo "Cannot extract '$1': unrecognized format" >&2; return 1 ;;
     esac
+}
+
+# Creates a timestamped backup copy of a file or directory.
+function bak() {
+    if [ -z "${1:-}" ] || [ ! -e "$1" ]; then
+        echo "Usage: bak <file_or_dir>" >&2; return 1;
+    fi
+    local target="$1"
+    local timestamp
+    timestamp=$(date +"%Y%m%d_%H%M%S")
+    cp -a "$target" "${target}.bak.${timestamp}" && echo "Backup: ${target}.bak.${timestamp}"
+}
+
+# Identifies the process listening on a specified port.
+function wholisten() {
+    if [ -z "${1:-}" ]; then
+        echo "Usage: wholisten <port>" >&2; return 1;
+    fi
+    local port="$1"
+    if command -v ss >/dev/null 2>&1 && ss -tulnp >/dev/null 2>&1; then
+        ss -tulnp | grep -E "(:|\])$port\b"
+    elif command -v netstat >/dev/null 2>&1; then
+        netstat -tlpn 2>/dev/null | grep -E "(:|\])$port\b"
+    elif command -v lsof >/dev/null 2>&1; then
+        lsof -iTCP:"$port" -sTCP:LISTEN -P -n 2>/dev/null
+    else
+        echo "wholisten: neither ss, netstat, nor lsof found" >&2
+        return 1
+    fi
+}
+
+# Kills any process currently listening on a given port.
+function killport() {
+    if [ -z "${1:-}" ]; then
+        echo "Usage: killport <port>" >&2; return 1;
+    fi
+    local port="$1"
+    local pids=""
+    if command -v fuser >/dev/null 2>&1; then
+        pids=$(fuser "$port/tcp" 2>/dev/null)
+    elif command -v lsof >/dev/null 2>&1; then
+        pids=$(lsof -ti tcp:"$port" 2>/dev/null)
+    fi
+    if [ -n "$pids" ]; then
+        echo "Killing PID(s) on port $port: $pids"
+        kill -9 $pids 2>/dev/null
+    else
+        echo "No process found listening on port $port"
+    fi
+}
+
+# Quick find ignoring common large dependency folders (.git, node_modules, etc.).
+function qfind() {
+    if [ -z "${1:-}" ]; then
+        echo "Usage: qfind <pattern> [search_dir]" >&2; return 1;
+    fi
+    find "${2:-.}" \( -name .git -o -name node_modules -o -name .venv -o -name __pycache__ \) -prune -o -iname "*$1*" -print 2>/dev/null
+}
+
+# Displays largest items in directory.
+function fsize() {
+    du -ahd 1 "${1:-.}" 2>/dev/null | sort -rh | head -n 15
+}
+
+# Quick command-line math calculator using awk.
+function calc() {
+    if [ -z "${1:-}" ]; then
+        echo "Usage: calc <expression> (e.g. calc '1024 * 768 / 1000')" >&2; return 1;
+    fi
+    awk "BEGIN { print $* }"
+}
+
+# Print current Unix epoch timestamp.
+function epoch() {
+    date +%s
+}
+
+# Convert a Unix epoch timestamp to a human-readable date.
+function fromepoch() {
+    if [ -z "${1:-}" ]; then
+        echo "Usage: fromepoch <timestamp>" >&2; return 1;
+    fi
+    date -d @"$1" 2>/dev/null || date -r "$1" 2>/dev/null
 }
 
 
@@ -121,16 +232,33 @@ function bruteforce() {
         | sort | uniq -c | sort -rn | head -20
 }
 
-# Detect hidden PIDs: compare ps output against /proc entries.
+# Detect hidden PIDs: compare ps output against /proc entries to spot rootkits/hidden processes.
 function pshidden() {
-    local ps_pids proc_pids
-    ps_pids=$(ps -eo pid --no-headers | awk '{print $1}' | sort -n)
-    proc_pids=$(ls /proc 2>/dev/null | grep -E '^[0-9]+$' | sort -n)
-    local hidden
-    hidden=$(comm -13 <(echo "$ps_pids") <(echo "$proc_pids"))
-    if [ -n "$hidden" ]; then
-        echo "Hidden PIDs (in /proc but not in ps):"
-        echo "$hidden"
+    local ps_pids proc_pids candidate
+    # comm requires standard lexicographical sort (not numerical sort -n)
+    ps_pids=$(ps -eo pid --no-headers 2>/dev/null | awk '{print $1}' | sort)
+    proc_pids=$(find /proc -maxdepth 1 -name '[0-9]*' 2>/dev/null | sed 's#/proc/##' | sort)
+
+    local -a truly_hidden=()
+    for candidate in $(comm -13 <(echo "$ps_pids") <(echo "$proc_pids") 2>/dev/null); do
+        # Ignore our own PID and subshell PIDs created during command execution
+        if [ "$candidate" -eq "$$" ] || [ "$candidate" -eq "${BASHPID:-$$}" ]; then
+            continue
+        fi
+        # Eliminate transient subshells by re-verifying if the PID still exists
+        if [ -d "/proc/$candidate" ]; then
+            sleep 0.05
+            if [ -d "/proc/$candidate" ] && ! ps -p "$candidate" >/dev/null 2>&1; then
+                local proc_name
+                proc_name=$(cat "/proc/$candidate/comm" 2>/dev/null || echo "unknown")
+                truly_hidden+=("$candidate ($proc_name)")
+            fi
+        fi
+    done
+
+    if [ ${#truly_hidden[@]} -gt 0 ]; then
+        echo "Suspicious hidden PIDs detected (in /proc but invisible to ps):"
+        printf "  %s\n" "${truly_hidden[@]}"
     else
         echo "No hidden PIDs detected."
     fi

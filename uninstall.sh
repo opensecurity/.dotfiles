@@ -14,7 +14,7 @@ set -o pipefail
 #
 readonly C_DOTFILES_DIR="$HOME/.dotfiles"
 readonly C_BACKUP_DIR="$HOME/.dotfiles_backup"
-readonly C_DOTFILES_TO_UNLINK=( "bash_profile" "bashrc" "inputrc" )
+readonly C_DOTFILES_TO_UNLINK=( "bash_profile" "bashrc" "inputrc" "gitconfig" "gitignore_global" )
 
 #
 # PRIVATE_HELPERS
@@ -42,7 +42,7 @@ main() {
         local source_file="$C_DOTFILES_DIR/root/$dotfile"
 
         # Remove the symlink if it points to our dotfiles repo.
-        if [ -L "$target_link" ] && [ "$(readlink "$target_link")" == "$source_file" ]; then
+        if [ -L "$target_link" ] && [ "$(readlink "$target_link")" = "$source_file" ]; then
             _log_info "Removing symlink '$target_link'..."
             rm "$target_link"
         else

@@ -27,41 +27,50 @@ if command -v locale >/dev/null 2>&1; then
     fi
 fi
 
-export PATH="$PATH:/usr/local/sbin:/usr/local/bin"
+# Prepend standard user bin directories if they exist (without duplicating).
+for _dir in "$HOME/.local/bin" "$HOME/bin" "/usr/local/bin" "/usr/local/sbin"; do
+    if [ -d "$_dir" ] && [[ ":$PATH:" != *":$_dir:"* ]]; then
+        PATH="$_dir:$PATH"
+    fi
+done
+unset _dir
+export PATH
+
+# Default pager with ANSI color and smart-case search support.
+export PAGER="${PAGER:-less}"
+export LESS="-R -i -M --shift 5"
 
 # Enable color support for tools that respect this variable.
 export CLICOLOR=1
 export LSCOLORS="GxFxCxDxBxegedabagaced"
 
-# Configure shell history to ignore duplicate commands.
-export HISTCONTROL="ignoredups:erasedups"
+# Colored diagnostic output for GCC and Clang builds.
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
-# Increase history size.
-export HISTSIZE=50000
-export HISTFILESIZE=100000
-
-# Do not put duplicate lines or lines starting with space in the history.
-export HISTIGNORE="&:[ ]*:exit:bg:fg:history:clear:cls:c"
-
-# Add timestamps to history entries.
-export HISTTIMEFORMAT="%F %T  "
-
+# Clean output formatting for Bash built-in time keyword.
+export TIMEFORMAT=$'\nreal\t%3R\nuser\t%3U\nsys\t%3S'
 
 # ============================================================================
 #  Shell Options (shopt)
 # ============================================================================
 
-# Append to history file instead of overwriting (critical for multi-session).
-shopt -s histappend
+# Do not search entire PATH when pressing Tab on an empty line (prevents terminal lag).
+shopt -s no_empty_cmd_completion 2>/dev/null
 
-# Save multi-line commands as a single history entry.
-shopt -s cmdhist
+# Automatically expand variables in directory completion (e.g. $HOME/doc<tab>).
+shopt -s direxpand 2>/dev/null
 
-# Re-edit a failed history substitution.
-shopt -s histreedit
+# Inherit completion rules for aliases (e.g. g='git' gets git's tab completions).
+shopt -s progcomp_alias 2>/dev/null
 
-# Verify history substitution before executing.
-shopt -s histverify
+# Warn before exiting if background jobs are still running.
+shopt -s checkjobs 2>/dev/null
+
+# Do not match '.' and '..' when globbing hidden files with .*
+shopt -s globskipdots 2>/dev/null
+
+# Properly quote filenames with spaces during tab completion.
+shopt -s complete_fullquote 2>/dev/null
 
 # Auto-correct minor cd typos (e.g., "cd /ect" -> "cd /etc").
 shopt -s cdspell
@@ -89,21 +98,3 @@ shopt -s nocaseglob
 
 # If a glob pattern matches nothing, expand to empty instead of the literal.
 shopt -s nullglob 2>/dev/null
-
-
-# ============================================================================
-#  History Sync Across Sessions
-# ============================================================================
-# Append new entries to the history file after each command.
-# We intentionally do NOT use "history -c; history -r" here because that
-# resets readline's internal history pointer on every prompt, which breaks
-# Up-arrow prefix search for commands typed in the current session.
-# New terminals inherit the full history on startup automatically.
-_dotfiles_history_sync() {
-    history -a
-}
-
-# Chain into PROMPT_COMMAND without overwriting existing entries.
-if [[ "${PROMPT_COMMAND:-}" != *"_dotfiles_history_sync"* ]]; then
-    PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_dotfiles_history_sync"
-fi

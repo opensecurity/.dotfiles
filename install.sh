@@ -15,7 +15,7 @@ set -o pipefail
 readonly C_DOTFILES_DIR="$HOME/.dotfiles"
 readonly C_BACKUP_DIR="$HOME/.dotfiles_backup"
 readonly C_TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
-readonly C_DOTFILES_TO_LINK=( "bash_profile" "bashrc" "inputrc" )
+readonly C_DOTFILES_TO_LINK=( "bash_profile" "bashrc" "inputrc" "gitconfig" "gitignore_global" )
 
 #
 # PRIVATE_HELPERS
@@ -24,15 +24,21 @@ _log_info() {
     echo "[INFO] $1"
 }
 
+_log_warn() {
+    echo "[WARN] $1" >&2
+}
+
 _log_error() {
     echo "[ERROR] $1" >&2
 }
 
 _check_dependencies() {
     local has_error=0
-    local dependencies=( "git" "tput" "dircolors" )
+    local required_deps=( "git" )
+    local optional_deps=( "tput" "dircolors" )
+
     _log_info "Checking for required dependencies..."
-    for cmd in "${dependencies[@]}"; do
+    for cmd in "${required_deps[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
             _log_error "Required command not found: '$cmd'"
             has_error=1
@@ -41,6 +47,12 @@ _check_dependencies() {
     if [ "$has_error" -eq 1 ]; then
         exit 1
     fi
+
+    for cmd in "${optional_deps[@]}"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            _log_warn "Optional tool not found (non-fatal): '$cmd'"
+        fi
+    done
 }
 
 #

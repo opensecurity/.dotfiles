@@ -7,11 +7,11 @@
 # --- Constants ---
 SHELL := /bin/bash
 SHELLCHECK := $(shell command -v shellcheck)
-PROJECT_FILES := install.sh uninstall.sh lib/*.sh root/*
+PROJECT_FILES := install.sh uninstall.sh lib/*.sh root/bashrc root/bash_profile
 
 # --- Targets ---
 
-.PHONY: help lint clean install
+.PHONY: help lint test install uninstall
 
 help:
 	@echo "Dotfiles Management"
@@ -19,10 +19,16 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  lint        - Statically analyze all shell scripts for errors."
+	@echo "  test        - Verify shell script syntax."
+	@echo "  lint        - Statically analyze shell scripts with shellcheck."
 	@echo "  install     - Run the installation script."
 	@echo "  uninstall   - Run the uninstallation script."
 	@echo ""
+
+test:
+	@echo "Checking syntax of shell scripts..."
+	@bash -n install.sh uninstall.sh lib/*.sh root/bashrc root/bash_profile
+	@echo "All shell scripts passed syntax checks."
 
 lint:
 ifndef SHELLCHECK

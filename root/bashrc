@@ -10,7 +10,16 @@
 #
 # CONSTANTS
 #
-C_DOTFILES_INIT_PATH="$HOME/.dotfiles/lib/init.sh"
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+    _bashrc_file="${BASH_SOURCE[0]}"
+    if [ -L "$_bashrc_file" ]; then
+        _bashrc_file=$(readlink "$_bashrc_file" 2>/dev/null || echo "$_bashrc_file")
+    fi
+    _dotfiles_dir="$(cd "$(dirname "$_bashrc_file")/.." 2>/dev/null && pwd)"
+    C_DOTFILES_INIT_PATH="${_dotfiles_dir}/lib/init.sh"
+    unset _bashrc_file _dotfiles_dir
+fi
+C_DOTFILES_INIT_PATH="${C_DOTFILES_INIT_PATH:-$HOME/.dotfiles/lib/init.sh}"
 
 #
 # IMPLEMENTATION
